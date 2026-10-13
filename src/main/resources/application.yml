@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: smart-locker
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
