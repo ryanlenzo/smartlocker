@@ -48,6 +48,27 @@ class LockerTest {
     }
 
     @Test
+    void theRightCodeReleasesTheParcel() {
+        locker.tryOccupy(parcel);
+
+        assertThat(locker.releaseIfCodeMatches(new PickupCode("123456"))).contains(parcel);
+        assertThat(locker.isAvailable()).isTrue();
+    }
+
+    @Test
+    void aWrongCodeReleasesNothing() {
+        locker.tryOccupy(parcel);
+
+        assertThat(locker.releaseIfCodeMatches(new PickupCode("000000"))).isEmpty();
+        assertThat(locker.occupant()).contains(parcel);
+    }
+
+    @Test
+    void anEmptyLockerReleasesNothing() {
+        assertThat(locker.releaseIfCodeMatches(new PickupCode("123456"))).isEmpty();
+    }
+
+    @Test
     void cannotOccupyWithNull() {
         assertThatThrownBy(() -> locker.tryOccupy(null)).isInstanceOf(NullPointerException.class);
     }

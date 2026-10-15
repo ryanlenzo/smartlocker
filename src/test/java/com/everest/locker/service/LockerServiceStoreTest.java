@@ -16,6 +16,7 @@ import com.everest.locker.notification.Notifier;
 import com.everest.locker.repository.InMemoryLockerRepository;
 import com.everest.locker.service.strategy.PickupCodeGenerator;
 import com.everest.locker.service.strategy.SmallestFitSelectionPolicy;
+import com.everest.locker.support.RecordingLockerDoor;
 import com.everest.locker.support.RecordingNotifier;
 import com.everest.locker.support.SequenceCodeGenerator;
 import org.junit.jupiter.api.Test;
@@ -194,7 +195,8 @@ class LockerServiceStoreTest {
     }
 
     private static LockerService service(PickupCodeGenerator codes, Notifier notifier) {
-        return new LockerService(new InMemoryLockerRepository(), new SmallestFitSelectionPolicy(), codes, notifier);
+        return new LockerService(
+                new InMemoryLockerRepository(), new SmallestFitSelectionPolicy(), codes, notifier, new RecordingLockerDoor());
     }
 
     private static LockerStatus statusOf(LockerService service, String lockerId) {

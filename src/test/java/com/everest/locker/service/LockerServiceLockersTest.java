@@ -9,6 +9,7 @@ import com.everest.locker.entity.LockerStatus;
 import com.everest.locker.exception.InvalidRequestException;
 import com.everest.locker.repository.InMemoryLockerRepository;
 import com.everest.locker.service.strategy.SmallestFitSelectionPolicy;
+import com.everest.locker.support.RecordingLockerDoor;
 import com.everest.locker.support.RecordingNotifier;
 import com.everest.locker.support.SequenceCodeGenerator;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,8 @@ class LockerServiceLockersTest {
             new InMemoryLockerRepository(),
             new SmallestFitSelectionPolicy(),
             new SequenceCodeGenerator("111111"),
-            new RecordingNotifier());
+            new RecordingNotifier(),
+            new RecordingLockerDoor());
 
     @Test
     void createsTheRequestedNumberOfAvailableLockers() {

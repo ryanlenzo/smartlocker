@@ -33,4 +33,13 @@ class InMemoryLockerRepositoryTest {
     void isEmptyInitially() {
         assertThat(repository.findAll()).isEmpty();
     }
+
+    @Test
+    void findsALockerById() {
+        Locker locker = new Locker(repository.nextId(), Size.SMALL);
+        repository.save(locker);
+
+        assertThat(repository.findById(new LockerId(1))).containsSame(locker);
+        assertThat(repository.findById(new LockerId(2))).isEmpty();
+    }
 }

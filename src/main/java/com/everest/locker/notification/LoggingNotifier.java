@@ -2,7 +2,6 @@ package com.everest.locker.notification;
 
 import com.everest.locker.entity.LockerId;
 import com.everest.locker.entity.PickupCode;
-import com.everest.locker.notification.Notifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

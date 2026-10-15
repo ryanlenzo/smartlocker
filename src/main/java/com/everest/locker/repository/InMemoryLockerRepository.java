@@ -2,10 +2,10 @@ package com.everest.locker.repository;
 
 import com.everest.locker.entity.Locker;
 import com.everest.locker.entity.LockerId;
-import com.everest.locker.repository.LockerRepository;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,6 +26,11 @@ public class InMemoryLockerRepository implements LockerRepository {
     @Override
     public void save(Locker locker) {
         lockers.put(locker.id(), locker);
+    }
+
+    @Override
+    public Optional<Locker> findById(LockerId id) {
+        return Optional.ofNullable(lockers.get(id));
     }
 
     @Override

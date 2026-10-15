@@ -7,7 +7,8 @@ package com.everest.locker.exception;
  * exhaustive {@code switch}, and adding a new failure type will not compile until it is mapped.
  */
 public abstract sealed class LockerException extends RuntimeException
-        permits InvalidRequestException, NoSuitableLockerException, NotificationFailedException {
+        permits InvalidRequestException, NoSuitableLockerException, NotificationFailedException,
+                LockerNotFoundException, LockerEmptyException, InvalidPickupCodeException {
 
     protected LockerException(String message) {
         super(message);

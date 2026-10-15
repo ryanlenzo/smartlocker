@@ -1,13 +1,18 @@
 package com.everest.locker.service;
 
 import com.everest.locker.entity.Locker;
+import com.everest.locker.entity.LockerId;
 import com.everest.locker.entity.Parcel;
 import com.everest.locker.entity.PickupCode;
 import com.everest.locker.entity.Size;
 import com.everest.locker.entity.StoredParcel;
+import com.everest.locker.exception.InvalidPickupCodeException;
 import com.everest.locker.exception.InvalidRequestException;
+import com.everest.locker.exception.LockerEmptyException;
+import com.everest.locker.exception.LockerNotFoundException;
 import com.everest.locker.exception.NoSuitableLockerException;
 import com.everest.locker.exception.NotificationFailedException;
+import com.everest.locker.hardware.LockerDoor;
 import com.everest.locker.notification.Notifier;
 import com.everest.locker.repository.LockerRepository;
 import com.everest.locker.service.strategy.LockerSelectionPolicy;
@@ -33,6 +38,7 @@ public class LockerService {
     private final LockerSelectionPolicy selectionPolicy;
     private final PickupCodeGenerator codeGenerator;
     private final Notifier notifier;
+    private final LockerDoor lockerDoor;
 
     /** Codes of packages currently in a locker; each must be unique. */
     private final Set<PickupCode> activeCodes = ConcurrentHashMap.newKeySet();
@@ -40,11 +46,13 @@ public class LockerService {
     public LockerService(LockerRepository lockers,
                          LockerSelectionPolicy selectionPolicy,
                          PickupCodeGenerator codeGenerator,
-                         Notifier notifier) {
+                         Notifier notifier,
+                         LockerDoor lockerDoor) {
         this.lockers = Objects.requireNonNull(lockers);
         this.selectionPolicy = Objects.requireNonNull(selectionPolicy);
         this.codeGenerator = Objects.requireNonNull(codeGenerator);
         this.notifier = Objects.requireNonNull(notifier);
+        this.lockerDoor = Objects.requireNonNull(lockerDoor);
     }
 
     /** Creates {@code count} empty lockers of the given size. */
@@ -90,6 +98,40 @@ public class LockerService {
         Locker locker = occupyFirstFree(candidates, stored);
         notifyCustomer(locker, stored);
         return new StoreResult(locker.id().toString(), locker.size());
+    }
+
+    /**
+     * Lets a customer collect their package with the locker id and pickup code they received.
+     * The code is checked before the door opens, so a wrong code never opens or changes
+     * anything. The package is only released once the door has opened.
+     *
+     * @throws LockerNotFoundException if no locker has that id
+     * @throws LockerEmptyException if there is nothing to collect (e.g. already collected)
+     * @throws InvalidPickupCodeException if the code does not belong to the package in the locker
+     */
+    public RetrievalResult retrieveParcel(String lockerId, String pickupCode) {
+        if (lockerId == null || lockerId.isBlank()) {
+            throw new InvalidRequestException("Locker id is required.");
+        }
+        if (pickupCode == null || pickupCode.isBlank()) {
+            throw new InvalidRequestException("Pickup code is required.");
+        }
+        Locker locker = LockerId.parse(lockerId)
+                .flatMap(lockers::findById)
+                .orElseThrow(() -> new LockerNotFoundException(lockerId.strip()));
+        PickupCode code = new PickupCode(pickupCode.strip());
+
+        StoredParcel stored = locker.occupant()
+                .orElseThrow(() -> new LockerEmptyException(locker.id()));
+        if (!stored.pickupCode().equals(code)) {
+            throw new InvalidPickupCodeException(locker.id());
+        }
+
+        lockerDoor.open(locker.id());
+        locker.releaseIfCodeMatches(code)
+                .orElseThrow(() -> new LockerEmptyException(locker.id()));  // collected by a parallel request
+        activeCodes.remove(code);
+        return new RetrievalResult(locker.id().toString(), locker.size());
     }
 
     private Locker occupyFirstFree(List<Locker> candidates, StoredParcel stored) {

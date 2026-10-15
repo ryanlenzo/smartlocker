@@ -47,6 +47,20 @@ public final class Locker {
         return released;
     }
 
+    /**
+     * Empties the locker only if the given code belongs to the parcel inside.
+     *
+     * @return the released parcel, or empty if the locker is empty or the code does not match;
+     *         in that case nothing changes
+     */
+    public Optional<StoredParcel> releaseIfCodeMatches(PickupCode code) {
+        Objects.requireNonNull(code, "code must not be null");
+        if (occupant == null || !occupant.pickupCode().equals(code)) {
+            return Optional.empty();
+        }
+        return Optional.of(release());
+    }
+
     public LockerId id() {
         return id;
     }

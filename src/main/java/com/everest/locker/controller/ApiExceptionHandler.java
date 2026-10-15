@@ -1,8 +1,11 @@
 package com.everest.locker.controller;
 
 import com.everest.locker.entity.Size;
+import com.everest.locker.exception.InvalidPickupCodeException;
 import com.everest.locker.exception.InvalidRequestException;
+import com.everest.locker.exception.LockerEmptyException;
 import com.everest.locker.exception.LockerException;
+import com.everest.locker.exception.LockerNotFoundException;
 import com.everest.locker.exception.NoSuitableLockerException;
 import com.everest.locker.exception.NotificationFailedException;
 import java.util.Arrays;
@@ -36,6 +39,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return switch (ex) {
             case InvalidRequestException e -> problem(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", e.getMessage());
             case NoSuitableLockerException e -> problem(HttpStatus.CONFLICT, "NO_SUITABLE_LOCKER", e.getMessage());
+            case LockerNotFoundException e -> problem(HttpStatus.NOT_FOUND, "LOCKER_NOT_FOUND", e.getMessage());
+            case LockerEmptyException e -> problem(HttpStatus.CONFLICT, "LOCKER_EMPTY", e.getMessage());
+            case InvalidPickupCodeException e -> problem(HttpStatus.FORBIDDEN, "INVALID_PICKUP_CODE", e.getMessage());
             case NotificationFailedException e -> {
                 log.error("Customer notification failed", e);
                 yield problem(HttpStatus.SERVICE_UNAVAILABLE, "NOTIFICATION_FAILED", e.getMessage());
