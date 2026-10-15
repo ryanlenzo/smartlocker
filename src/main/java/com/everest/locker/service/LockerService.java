@@ -17,6 +17,11 @@ import com.everest.locker.notification.Notifier;
 import com.everest.locker.repository.LockerRepository;
 import com.everest.locker.service.strategy.LockerSelectionPolicy;
 import com.everest.locker.service.strategy.PickupCodeGenerator;
+import com.everest.locker.service.strategy.StorageCharge;
+import com.everest.locker.service.strategy.StorageChargePolicy;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -39,6 +44,8 @@ public class LockerService {
     private final PickupCodeGenerator codeGenerator;
     private final Notifier notifier;
     private final LockerDoor lockerDoor;
+    private final StorageChargePolicy chargePolicy;
+    private final Clock clock;
 
     /** Codes of packages currently in a locker; each must be unique. */
     private final Set<PickupCode> activeCodes = ConcurrentHashMap.newKeySet();
@@ -47,12 +54,16 @@ public class LockerService {
                          LockerSelectionPolicy selectionPolicy,
                          PickupCodeGenerator codeGenerator,
                          Notifier notifier,
-                         LockerDoor lockerDoor) {
+                         LockerDoor lockerDoor,
+                         StorageChargePolicy chargePolicy,
+                         Clock clock) {
         this.lockers = Objects.requireNonNull(lockers);
         this.selectionPolicy = Objects.requireNonNull(selectionPolicy);
         this.codeGenerator = Objects.requireNonNull(codeGenerator);
         this.notifier = Objects.requireNonNull(notifier);
         this.lockerDoor = Objects.requireNonNull(lockerDoor);
+        this.chargePolicy = Objects.requireNonNull(chargePolicy);
+        this.clock = Objects.requireNonNull(clock);
     }
 
     /** Creates {@code count} empty lockers of the given size. */
@@ -94,14 +105,15 @@ public class LockerService {
             throw new NoSuitableLockerException(size);
         }
 
-        StoredParcel stored = new StoredParcel(parcel, reserveUniqueCode());
+        StoredParcel stored = new StoredParcel(parcel, reserveUniqueCode(), clock.instant());
         Locker locker = occupyFirstFree(candidates, stored);
         notifyCustomer(locker, stored);
-        return new StoreResult(locker.id().toString(), locker.size());
+        return new StoreResult(locker.id().toString(), locker.size(), stored.storedAt());
     }
 
     /**
-     * Lets a customer collect their package with the locker id and pickup code they received.
+     * Lets a customer collect their package with the locker id and pickup code they received,
+     * and returns the storage charge for the time it spent in the locker.
      * The code is checked before the door opens, so a wrong code never opens or changes
      * anything. The package is only released once the door has opened.
      *
@@ -128,10 +140,14 @@ public class LockerService {
         }
 
         lockerDoor.open(locker.id());
-        locker.releaseIfCodeMatches(code)
+        StoredParcel released = locker.releaseIfCodeMatches(code)
                 .orElseThrow(() -> new LockerEmptyException(locker.id()));  // collected by a parallel request
         activeCodes.remove(code);
-        return new RetrievalResult(locker.id().toString(), locker.size());
+
+        Instant retrievedAt = clock.instant();
+        StorageCharge charge = chargePolicy.chargeFor(Duration.between(released.storedAt(), retrievedAt));
+        return new RetrievalResult(locker.id().toString(), locker.size(),
+                released.storedAt(), retrievedAt, charge.chargeableDays(), charge.amount());
     }
 
     private Locker occupyFirstFree(List<Locker> candidates, StoredParcel stored) {

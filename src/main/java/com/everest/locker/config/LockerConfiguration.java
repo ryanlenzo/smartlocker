@@ -12,7 +12,11 @@ import com.everest.locker.service.strategy.LockerSelectionPolicy;
 import com.everest.locker.service.strategy.PickupCodeGenerator;
 import com.everest.locker.service.strategy.RandomPickupCodeGenerator;
 import com.everest.locker.service.strategy.SmallestFitSelectionPolicy;
+import com.everest.locker.service.strategy.StorageChargePolicy;
 import java.security.SecureRandom;
+import java.time.Clock;
+import java.time.Instant;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -23,6 +27,7 @@ import org.springframework.context.annotation.Profile;
  * notifier) is a change here only.
  */
 @Configuration
+@EnableConfigurationProperties(PricingProperties.class)
 public class LockerConfiguration {
 
     @Bean
@@ -38,6 +43,24 @@ public class LockerConfiguration {
     @Bean
     PickupCodeGenerator pickupCodeGenerator() {
         return new RandomPickupCodeGenerator(new SecureRandom());
+    }
+
+    @Bean
+    StorageChargePolicy storageChargePolicy(PricingProperties pricing) {
+        return pricing.toChargePolicy();
+    }
+
+    @Bean
+    @Profile("!demo")
+    Clock clock() {
+        return Clock.systemUTC();
+    }
+
+    /** Demo profile: a clock that can be moved forward, to show storage charges without waiting days. */
+    @Bean
+    @Profile("demo")
+    AdjustableClock adjustableClock() {
+        return new AdjustableClock(Instant.now());
     }
 
     @Bean
@@ -63,8 +86,10 @@ public class LockerConfiguration {
                                 LockerSelectionPolicy lockerSelectionPolicy,
                                 PickupCodeGenerator pickupCodeGenerator,
                                 Notifier notifier,
-                                LockerDoor lockerDoor) {
-        return new LockerService(
-                lockerRepository, lockerSelectionPolicy, pickupCodeGenerator, notifier, lockerDoor);
+                                LockerDoor lockerDoor,
+                                StorageChargePolicy storageChargePolicy,
+                                Clock clock) {
+        return new LockerService(lockerRepository, lockerSelectionPolicy, pickupCodeGenerator,
+                notifier, lockerDoor, storageChargePolicy, clock);
     }
 }

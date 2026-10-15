@@ -20,6 +20,7 @@ import com.everest.locker.exception.NotificationFailedException;
 import com.everest.locker.service.LockerService;
 import com.everest.locker.service.LockerView;
 import com.everest.locker.service.StoreResult;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,13 +113,14 @@ class LockerApiWebTest {
     @Test
     void storePackageReturns201WithTheLockerButNotThePickupCode() throws Exception {
         given(service.storeParcel(Size.MEDIUM, "+60123456789"))
-                .willReturn(new StoreResult("L2", Size.MEDIUM));
+                .willReturn(new StoreResult("L2", Size.MEDIUM, Instant.parse("2026-01-01T09:00:00Z")));
 
         mvc.perform(json(post("/api/packages"), """
                         {"size": "MEDIUM", "customerContact": "+60123456789"}"""))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.lockerId").value("L2"))
                 .andExpect(jsonPath("$.lockerSize").value("MEDIUM"))
+                .andExpect(jsonPath("$.storedAt").value("2026-01-01T09:00:00Z"))
                 .andExpect(jsonPath("$.pickupCode").doesNotExist());
     }
 

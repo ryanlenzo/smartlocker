@@ -2,6 +2,7 @@ package com.everest.locker.service;
 
 import static com.everest.locker.entity.Size.MEDIUM;
 import static com.everest.locker.entity.Size.SMALL;
+import static com.everest.locker.support.LockerServiceBuilder.aLockerService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -12,11 +13,7 @@ import com.everest.locker.exception.InvalidRequestException;
 import com.everest.locker.exception.LockerEmptyException;
 import com.everest.locker.exception.LockerNotFoundException;
 import com.everest.locker.hardware.LockerDoor;
-import com.everest.locker.repository.InMemoryLockerRepository;
-import com.everest.locker.service.strategy.SmallestFitSelectionPolicy;
 import com.everest.locker.support.RecordingLockerDoor;
-import com.everest.locker.support.RecordingNotifier;
-import com.everest.locker.support.SequenceCodeGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
@@ -167,11 +164,6 @@ class LockerServiceRetrieveTest {
     }
 
     private static LockerService service(LockerDoor door, String... codes) {
-        return new LockerService(
-                new InMemoryLockerRepository(),
-                new SmallestFitSelectionPolicy(),
-                new SequenceCodeGenerator(codes),
-                new RecordingNotifier(),
-                door);
+        return aLockerService().withDoor(door).withCodes(codes).build();
     }
 }

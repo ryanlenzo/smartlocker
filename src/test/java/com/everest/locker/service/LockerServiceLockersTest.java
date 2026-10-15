@@ -2,28 +2,19 @@ package com.everest.locker.service;
 
 import static com.everest.locker.entity.Size.LARGE;
 import static com.everest.locker.entity.Size.SMALL;
+import static com.everest.locker.support.LockerServiceBuilder.aLockerService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.everest.locker.entity.LockerStatus;
 import com.everest.locker.exception.InvalidRequestException;
-import com.everest.locker.repository.InMemoryLockerRepository;
-import com.everest.locker.service.strategy.SmallestFitSelectionPolicy;
-import com.everest.locker.support.RecordingLockerDoor;
-import com.everest.locker.support.RecordingNotifier;
-import com.everest.locker.support.SequenceCodeGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class LockerServiceLockersTest {
 
-    private final LockerService service = new LockerService(
-            new InMemoryLockerRepository(),
-            new SmallestFitSelectionPolicy(),
-            new SequenceCodeGenerator("111111"),
-            new RecordingNotifier(),
-            new RecordingLockerDoor());
+    private final LockerService service = aLockerService().withCodes("111111").build();
 
     @Test
     void createsTheRequestedNumberOfAvailableLockers() {

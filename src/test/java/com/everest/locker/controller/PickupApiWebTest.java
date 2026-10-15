@@ -13,6 +13,8 @@ import com.everest.locker.exception.LockerEmptyException;
 import com.everest.locker.exception.LockerNotFoundException;
 import com.everest.locker.service.LockerService;
 import com.everest.locker.service.RetrievalResult;
+import java.math.BigDecimal;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -33,13 +35,19 @@ class PickupApiWebTest {
 
     @Test
     void aValidPickupReturns200WithTheOpenedLocker() throws Exception {
-        given(service.retrieveParcel("L2", "123456")).willReturn(new RetrievalResult("L2", Size.MEDIUM));
+        given(service.retrieveParcel("L2", "123456")).willReturn(new RetrievalResult("L2", Size.MEDIUM,
+                Instant.parse("2026-01-01T09:00:00Z"), Instant.parse("2026-01-13T09:00:00Z"),
+                12, new BigDecimal("21.00")));
 
         retrieve("L2", """
                 {"pickupCode": "123456"}""")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.lockerId").value("L2"))
-                .andExpect(jsonPath("$.lockerSize").value("MEDIUM"));
+                .andExpect(jsonPath("$.lockerSize").value("MEDIUM"))
+                .andExpect(jsonPath("$.storedAt").value("2026-01-01T09:00:00Z"))
+                .andExpect(jsonPath("$.retrievedAt").value("2026-01-13T09:00:00Z"))
+                .andExpect(jsonPath("$.chargeableDays").value(12))
+                .andExpect(jsonPath("$.storageCharge").value(21.00));
     }
 
     @Test

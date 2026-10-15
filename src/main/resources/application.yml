@@ -13,3 +13,20 @@ server:
   error:
     include-stacktrace: never
     include-message: never
+
+# Storage charges (Level 3). Each started 24-hour block is one chargeable day.
+# Daily price = unit-rate x the multiplier of the tier the day falls in.
+# Tiers must run from day 1 without gaps; the last tier has no to-day.
+# A free grace period is a tier with multiplier 0.
+locker:
+  pricing:
+    unit-rate: 1.00        # X in the brief
+    tiers:
+      - from-day: 1        # days 1-5: X per day
+        to-day: 5
+        multiplier: 1
+      - from-day: 6        # days 6-10: 2X per day
+        to-day: 10
+        multiplier: 2
+      - from-day: 11       # day 11 onwards: 3X per day
+        multiplier: 3

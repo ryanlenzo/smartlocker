@@ -3,6 +3,7 @@ package com.everest.locker.service;
 import static com.everest.locker.entity.Size.LARGE;
 import static com.everest.locker.entity.Size.MEDIUM;
 import static com.everest.locker.entity.Size.SMALL;
+import static com.everest.locker.support.LockerServiceBuilder.aLockerService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -13,10 +14,7 @@ import com.everest.locker.exception.InvalidRequestException;
 import com.everest.locker.exception.NoSuitableLockerException;
 import com.everest.locker.exception.NotificationFailedException;
 import com.everest.locker.notification.Notifier;
-import com.everest.locker.repository.InMemoryLockerRepository;
 import com.everest.locker.service.strategy.PickupCodeGenerator;
-import com.everest.locker.service.strategy.SmallestFitSelectionPolicy;
-import com.everest.locker.support.RecordingLockerDoor;
 import com.everest.locker.support.RecordingNotifier;
 import com.everest.locker.support.SequenceCodeGenerator;
 import org.junit.jupiter.api.Test;
@@ -195,8 +193,7 @@ class LockerServiceStoreTest {
     }
 
     private static LockerService service(PickupCodeGenerator codes, Notifier notifier) {
-        return new LockerService(
-                new InMemoryLockerRepository(), new SmallestFitSelectionPolicy(), codes, notifier, new RecordingLockerDoor());
+        return aLockerService().withCodes(codes).withNotifier(notifier).build();
     }
 
     private static LockerStatus statusOf(LockerService service, String lockerId) {

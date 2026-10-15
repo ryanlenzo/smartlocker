@@ -11,6 +11,7 @@ import com.everest.locker.entity.Parcel;
 import com.everest.locker.entity.PickupCode;
 import com.everest.locker.entity.Size;
 import com.everest.locker.entity.StoredParcel;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +64,7 @@ class SmallestFitSelectionPolicyTest {
     }
 
     private static Locker occupied(Locker locker) {
-        locker.tryOccupy(new StoredParcel(new Parcel(SMALL, "a@b.com"), new PickupCode("000001")));
+        locker.tryOccupy(new StoredParcel(new Parcel(SMALL, "a@b.com"), new PickupCode("000001"), Instant.EPOCH));
         return locker;
     }
 

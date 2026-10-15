@@ -3,6 +3,7 @@ package com.everest.locker.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 class LockerTest {
@@ -74,6 +75,6 @@ class LockerTest {
     }
 
     private static StoredParcel storedParcel(String code) {
-        return new StoredParcel(new Parcel(Size.SMALL, "+60123456789"), new PickupCode(code));
+        return new StoredParcel(new Parcel(Size.SMALL, "+60123456789"), new PickupCode(code), Instant.EPOCH);
     }
 }
