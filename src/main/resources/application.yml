@@ -4,6 +4,10 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  jackson:
+    mapper:
+      # Accept "small" as well as "SMALL" for sizes.
+      accept-case-insensitive-enums: true
 
 server:
   error:
